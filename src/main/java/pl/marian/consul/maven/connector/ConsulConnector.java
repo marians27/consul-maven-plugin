@@ -50,7 +50,8 @@ public class ConsulConnector {
     }
 
     private String createUrl(Object key) {
-        return format(KV_PUT_URL_TEMPLATE, consulHost, consulPort, kvFolder, key);
+        String url = format(KV_PUT_URL_TEMPLATE, consulHost, consulPort, kvFolder, key);
+        return url.replaceAll("(?<!http:)//", "/");
     }
 
     private boolean isSuccessful(int statusCode) {
