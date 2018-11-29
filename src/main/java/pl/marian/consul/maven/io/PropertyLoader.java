@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import static java.lang.String.format;
+
 public class PropertyLoader {
 
     private final String baseDirectory;
@@ -24,13 +26,15 @@ public class PropertyLoader {
             }
             return prop;
         } catch (IOException e) {
-            //TODO: Better exception handling!
-            throw new RuntimeException(e);
+            throw new LoaderException(format("File %s does not exists within %s directory", fileName, baseDirectory), e);
         }
     }
 
     public List<String> listPropertyFiles() {
         File propertyDirectory = new File(baseDirectory);
+        if (!propertyDirectory.exists()) {
+            throw new LoaderException(format("Directory %s does not exists", baseDirectory));
+        }
         String[] files = propertyDirectory.list((dir, name) -> name.endsWith(".properties"));
         if (files != null) {
             return Arrays.asList(files);
