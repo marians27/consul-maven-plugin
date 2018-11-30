@@ -1,17 +1,9 @@
 package pl.marian.consul.maven.connector;
 
 import com.pszymczyk.consul.junit.ConsulResource;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
 import org.junit.ClassRule;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.util.Base64;
+import pl.marian.consul.maven.test.ConsulTestUtil;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,14 +12,11 @@ public class ConsulConnectorTest {
     @ClassRule
     public static final ConsulResource consul = new ConsulResource();
 
-    private HttpClient client = HttpClientBuilder.create().build();
+    private ConsulTestUtil consulTestUtil = new ConsulTestUtil(consul.getHttpPort());
 
     @Test
     public void consulIsRunning() throws Exception {
-        HttpGet request = new HttpGet(createUrl("/v1/agent/self"));
-        HttpResponse response = client.execute(request);
-
-        assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
+        assertThat(consulTestUtil.isConsulRunning()).isTrue();
     }
 
     @Test
@@ -36,11 +25,8 @@ public class ConsulConnectorTest {
 
         consulConnector.putKeyValue("feature.enabled", true);
 
-        HttpGet request = new HttpGet(createUrl("/v1/kv/config/test/feature.enabled"));
-        HttpResponse response = client.execute(request);
-
-        assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
-        assertThat(extractStoredValue(response)).isEqualTo("true");
+        assertThat(consulTestUtil.consulContainsProperty("config/test", "feature.enabled")).isTrue();
+        assertThat(consulTestUtil.loadPropertyValueFromConsul("config/test", "feature.enabled")).isEqualTo("true");
     }
 
     @Test
@@ -49,11 +35,8 @@ public class ConsulConnectorTest {
 
         consulConnector.putKeyValue("count", 111);
 
-        HttpGet request = new HttpGet(createUrl("/v1/kv/config/count"));
-        HttpResponse response = client.execute(request);
-
-        assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
-        assertThat(extractStoredValue(response)).isEqualTo("111");
+        assertThat(consulTestUtil.consulContainsProperty("config", "count")).isTrue();
+        assertThat(consulTestUtil.loadPropertyValueFromConsul("config", "count")).isEqualTo("111");
     }
 
     @Test
@@ -62,11 +45,8 @@ public class ConsulConnectorTest {
 
         consulConnector.putKeyValue("name", "someName");
 
-        HttpGet request = new HttpGet(createUrl("/v1/kv/config/name"));
-        HttpResponse response = client.execute(request);
-
-        assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
-        assertThat(extractStoredValue(response)).isEqualTo("someName");
+        assertThat(consulTestUtil.consulContainsProperty("config", "name")).isTrue();
+        assertThat(consulTestUtil.loadPropertyValueFromConsul("config", "name")).isEqualTo("someName");
     }
 
     @Test
@@ -75,11 +55,8 @@ public class ConsulConnectorTest {
 
         consulConnector.putKeyValue("name", "someName");
 
-        HttpGet request = new HttpGet(createUrl("/v1/kv/name"));
-        HttpResponse response = client.execute(request);
-
-        assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
-        assertThat(extractStoredValue(response)).isEqualTo("someName");
+        assertThat(consulTestUtil.consulContainsProperty("", "name")).isTrue();
+        assertThat(consulTestUtil.loadPropertyValueFromConsul("", "name")).isEqualTo("someName");
     }
 
     @Test(expected = ConsulException.class)
@@ -96,17 +73,7 @@ public class ConsulConnectorTest {
         consulConnector.putKeyValue("../../test/dd/", "someName");
     }
 
-    private String extractStoredValue(HttpResponse response) throws IOException {
-        String responseBody = EntityUtils.toString(response.getEntity());
-        String value = new JSONArray(responseBody).getJSONObject(0).getString("Value");
-        return new String(Base64.getDecoder().decode(value.getBytes()));
-    }
-
     private ConsulConnector createConnector(String kvDirectory) {
         return new ConsulConnector("localhost", consul.getHttpPort(), kvDirectory);
-    }
-
-    private String createUrl(String apiPath) {
-        return "http://localhost:" + consul.getHttpPort() + apiPath;
     }
 }

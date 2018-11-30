@@ -16,7 +16,7 @@ public class PropertiesExportMojo extends AbstractMojo {
     private String consulHost;
 
     @Parameter(property = "consulPort", defaultValue = "8500")
-    private Integer consulPort;
+    public Integer consulPort;
 
     @Parameter(property = "consulKvFolder", defaultValue = "")
     private String consulKvFolder;
