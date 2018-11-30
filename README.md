@@ -1,4 +1,5 @@
-# Consul Maven Plugin
+# Consul Maven Plugin [![Build Status](https://travis-ci.com/marians27/consul-maven-plugin.svg?branch=master)](https://travis-ci.com/marians27/consul-maven-plugin)
+
 Maven plugin for exporting properties files to the Consul key-value store
 
 ## Getting Started
